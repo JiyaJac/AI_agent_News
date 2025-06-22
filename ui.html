@@ -1,0 +1,96 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>News Preference Form</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9f9f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .form-container {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin: 15px 0 5px;
+    }
+
+    input[type="email"],
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    input[type="checkbox"] {
+      margin-right: 10px;
+    }
+
+    .checkbox-group {
+      margin-top: 10px;
+    }
+
+    button {
+      background-color: #007BFF;
+      color: white;
+      font-weight: bold;
+      border: none;
+      margin-top: 20px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="form-container">
+    <h2>📰 Subscribe to Personalized News</h2>
+    <form action="https://jiyajac.app.n8n.cloud/webhook-test/news-preference" method="POST">
+      <label for="email">Email</label>
+      <input type="email" name="email" placeholder="you@example.com" required />
+
+      <label>Select your interests:</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="interests" value="technology"> Technology</label>
+        <label><input type="checkbox" name="interests" value="sports"> Sports</label>
+        <label><input type="checkbox" name="interests" value="politics"> Politics</label>
+        <label><input type="checkbox" name="interests" value="health"> Health</label>
+        <label><input type="checkbox" name="interests" value="entertainment"> Entertainment</label>
+        <label><input type="checkbox" name="interests" value="business"> Business</label>
+      </div>
+
+      <button type="submit">Subscribe</button>
+    </form>
+  </div>
+
+</body>
+</html>
