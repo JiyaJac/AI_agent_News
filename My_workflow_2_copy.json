@@ -1,0 +1,348 @@
+{
+  "name": "My workflow 2 copy",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -420,
+        80
+      ],
+      "id": "d726ec25-902d-4f35-be10-c93d9212212f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User Interests: technology, India, space, education\n\nHere is a list of news article headlines:\n\n{{ $json[\"title\"] }}\n\nPlease rank and summarize the top 10 stories based on user interest. Return the output strictly in this JSON format:\n\n{\n  \"top_news\": [\n    {\n      \"rank\": 1,\n      \"title\": \"string\",\n      \"summary\": \"string\"\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        900,
+        -20
+      ],
+      "id": "46a1d09f-fcdc-4748-be23-a4d8e98ede6e",
+      "name": "AI Agent",
+      "retryOnFail": false,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "url": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "azureOpenAiApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -140,
+        -20
+      ],
+      "id": "436eb415-2290-446e-82e6-4f1e00433f98",
+      "name": "HTTP Request",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "PdyKgQ4JwZnadLs5",
+          "name": "Azure Open AI account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        -20
+      ],
+      "id": "d3d928b1-c7a6-4b6f-8523-02f0ce52f404",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dade470f-ccf7-4a29-bf9f-0a5f2657c380",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        300,
+        -20
+      ],
+      "id": "687ead0f-0220-4993-9e0a-a5c633846ceb",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "maxItems": 15
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        500,
+        -20
+      ],
+      "id": "af2f4513-683a-474f-ac10-472ca180ba0c",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "title"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        700,
+        -20
+      ],
+      "id": "0d32791f-0a32-48ed-a513-d640b1b33816",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        900,
+        160
+      ],
+      "id": "67f55ce3-aa51-4cab-97b2-ea37f299e1d6",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "4iTCUswbY9fmGpUP",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "satwik.palepu@gmail.com",
+        "subject": "Today's news is as follows:",
+        "emailType": "text",
+        "message": "={{ $json.emailBody }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1480,
+        -20
+      ],
+      "id": "0df890d0-90a7-4af2-aefd-5d65d3c5da03",
+      "name": "Gmail",
+      "webhookId": "544d0ac0-ec99-4d5e-936c-8eeb80c7fc0d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gbRa9pZ4zM6VEIPi",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawOutput = $json.output;\n\n// Extract JSON content using regex to isolate the {...}\nconst jsonMatch = rawOutput.match(/{[\\s\\S]*}/); // Matches first full {...} block\n\nif (!jsonMatch) {\n  throw new Error(\"No valid JSON object found in output\");\n}\n\nlet parsed;\ntry {\n  parsed = JSON.parse(jsonMatch[0]); // Only parse the clean JSON part\n} catch (err) {\n  throw new Error(\"Failed to parse extracted JSON: \" + err.message);\n}\n\n// Convert each news item into readable text\nconst newsItems = parsed.top_news;\nconst formattedText = newsItems.map(item => {\n  return `${item.rank}. ${item.title}\\n${item.summary}`;\n}).join('\\n\\n');\n\n// Return in a format Gmail can use\nreturn [\n  {\n    json: {\n      emailBody: formattedText\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        -20
+      ],
+      "id": "091cea2b-1ca4-47c8-9e75-75de9599b53f",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "url": "https://rss.app/feeds/0Y0S9zJlF1yieZf7.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        960
+      ],
+      "id": "ea5d677b-f159-4584-8970-3d0c215f6444",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "news-preference",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -440,
+        -120
+      ],
+      "id": "6f57c1b5-8712-4c5b-a8da-4daee20d6dc4",
+      "name": "Webhook",
+      "webhookId": "76f413d1-c276-47b5-99a8-77bc5e7d94bc"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "77837588-cd49-47b7-a481-f4f8914eae8e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d332e0315475424861e3a9b9b4fec9c48dccb14701461680179d99bdc1fb294a"
+  },
+  "id": "yoPgBmPlUPFjxaf2",
+  "tags": []
+}
